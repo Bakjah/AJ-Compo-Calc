@@ -3,263 +3,278 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoJuice Calculator</title>
+  <title>AutoJuice POS Ultra</title>
   <style>
     * { box-sizing: border-box; transition: all 0.2s ease; }
-
+    
     body {
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(circle at top left, #1a1a2e, #16213e);
-      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
       margin: 0;
-      min-height: 100vh;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      padding: 40px 20px;
+      min-height: 100vh;
+      padding: 20px;
     }
 
-    .container {
+    .app-container {
       display: flex;
-      gap: 20px;
+      gap: 30px;
       flex-wrap: wrap;
       justify-content: center;
-      max-width: 900px;
+      max-width: 1200px;
       width: 100%;
     }
 
-    .box {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(10px);
+    /* Calculator Card */
+    .calc-card {
+      background: #161b22;
       padding: 30px;
       border-radius: 20px;
       width: 400px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-      height: fit-content;
+      border: 1px solid #30363d;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    h2 { text-align: center; margin-bottom: 25px; color: #00d2ff; letter-spacing: 1px; }
-    label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: bold; }
+    .calc-card h2 { text-align: center; color: #58a6ff; margin-bottom: 25px; letter-spacing: 1px; }
+    label { font-size: 11px; font-weight: bold; color: #8b949e; text-transform: uppercase; display: block; margin-bottom: 5px; }
 
     select, input {
-      width: 100%; padding: 12px 15px; margin-top: 8px; margin-bottom: 15px;
-      border-radius: 8px; border: 1px solid #333; background: #0f172a; color: #fff;
-      font-size: 14px; outline: none;
+      width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px;
+      border: 1px solid #30363d; background: #010409; color: #fff; font-size: 14px;
     }
 
-    select:focus, input:focus { border-color: #00d2ff; }
+    .btn {
+      width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold;
+      cursor: pointer; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .btn-calc { background: #58a6ff; color: #ffffff; }
+    .btn-log { background: #238636; color: #fff; }
+    .btn-add { background: transparent; border: 1px dashed #484f58; color: #8b949e; }
 
-    button {
-      width: 100%; padding: 12px; border-radius: 8px; border: none;
-      font-weight: bold; cursor: pointer; text-transform: uppercase;
+    #hasil-display {
+      font-size: 28px; font-weight: bold; text-align: center; color: #58a6ff; margin-top: 10px;
     }
 
-    .add-btn { background: transparent; border: 1px dashed #2962ff; color: #2962ff; margin-bottom: 15px; }
-    .calc-btn { background: linear-gradient(135deg, #00c853, #b2ff59); color: #000; margin-top: 10px; }
-    .log-btn { background: #2962ff; color: #fff; margin-top: 10px; }
-
-    .log-box {
-      background: rgba(0, 0, 0, 0.3);
+    /* Professional Receipt */
+    .receipt-section { width: 420px; }
+    .receipt {
+      background: #fff;
+      color: #1a1a1a;
       padding: 25px;
-      border-radius: 20px;
-      width: 400px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      flex-direction: column;
+      font-family: 'Courier New', monospace;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      position: relative;
     }
 
-    .log-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px;
-      margin-bottom: 8px;
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      animation: fadeIn 0.3s ease;
+    .receipt::before, .receipt::after {
+      content: ""; position: absolute; left: 0; width: 100%; height: 10px;
+      background-size: 10px 10px;
+    }
+    .receipt::before { top: -10px; background-image: linear-gradient(-135deg, #fff 5px, transparent 0), linear-gradient(135deg, #fff 5px, transparent 0); }
+    .receipt::after { bottom: -10px; background-image: linear-gradient(-45deg, #fff 5px, transparent 0), linear-gradient(45deg, #fff 5px, transparent 0); }
+
+    .receipt-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+    
+    .item-block { margin-bottom: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; position: relative; }
+    .item-main { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
+    .item-detail { font-size: 11px; color: #666; padding-left: 10px; margin-top: 3px; }
+    
+    .del-btn { 
+      color: #ff4d4d; cursor: pointer; font-weight: bold; font-size: 16px; 
+      position: absolute; right: -15px; top: -5px; padding: 5px;
     }
 
-    .log-item .info { display: flex; flex-direction: column; flex-grow: 1; }
-    .log-item .info .cat { font-size: 10px; color: #00d2ff; font-weight: bold; }
-    .log-item .info .val { font-size: 16px; color: #fff; }
+    .divider { border-top: 2px solid #000; margin: 10px 0; }
 
-    .del-item {
-      width: 35px;
-      height: 35px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(244, 67, 54, 0.15);
-      color: #f44336;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 18px;
-      font-weight: bold;
-      border: 1px solid rgba(244, 67, 54, 0.3);
-      margin-left: 15px;
-      flex-shrink: 0;
-    }
+    .receipt-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
+    .total-final { font-size: 20px; font-weight: 900; border-top: 1px solid #000; margin-top: 10px; padding-top: 5px; }
+    
+    .jasa-row { color: #1a7f37; font-weight: bold; }
+    .vault-row { color: #005cc5; font-style: italic; }
 
-    .del-item:hover {
-      background: #f44336;
-      color: #fff;
-      transform: scale(1.1);
-    }
-
-    .grand-total {
-      margin-top: 20px;
-      padding: 15px;
-      background: rgba(255, 152, 0, 0.1);
-      border: 1px solid #ff9800;
-      border-radius: 10px;
-      font-size: 22px;
-      color: #ff9800;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .clear-btn { background: #333; color: #999; margin-top: 15px; padding: 8px; font-size: 11px; }
-    .clear-btn:hover { background: #f44336; color: #fff; }
-
-    .result { font-size: 26px; color: #00d2ff; text-align: center; margin-top: 15px; font-weight: bold; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateX(10px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
+    .toggle-btn { background: #30363d; color: #fff; width: 100%; margin-top: 15px; }
+    #receipt-body { display: none; }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="box">
-    <h2>AutoJuice <br><span style="color: #fff;">Component Calculator</span></h2>
-    <label>Main Category</label>
-    <select id="type" onchange="gantiForm()">
-      <option value="">Pilih Tipe</option>
-      <option value="repair">Repair</option>
-      <option value="modif">Modif</option>
-      <option value="brother">Brother</option>
-      <option value="ws_stored">WS Stored</option>
+<div class="app-container">
+  <div class="calc-card">
+    <h2>AUTOJUICE</h2>
+    <label>Pilih Layanan</label>
+    <select id="service-type" onchange="resetInputs()">
+      <option value="">-- Pilih --</option>
+      <option value="repair">Mechanical Repair (2.5x)</option>
+      <option value="modif">Custom Modification (2.0x)</option>
+      <option value="brother">Brotherhood Disc (1.8x)</option>
+      <option value="ws_stored">WS Stored (1.5x)</option>
     </select>
-    <div id="formArea"></div>
-    <button class="calc-btn" onclick="hitung()">Check Price</button>
-    <button class="log-btn" onclick="addToLog()">Add to Bill Log</button>
-    <div class="result" id="hasil">Total: $0.00</div>
+
+    <div id="input-container"></div>
+    <button class="btn btn-calc" onclick="runCalculation()">Hitung Harga</button>
+    <button class="btn btn-log" onclick="logToReceipt()">Simpan ke Struk</button>
+    <div id="hasil-display">$0.00</div>
   </div>
 
-  <div class="log-box">
-    <h3 style="text-align: center; color: #888; margin-top: 0;">Bill / Log History</h3>
-    <div id="logList"></div>
-    <div class="grand-total" id="grandTotal">Grand Total: $0.00</div>
-    <button class="clear-btn" onclick="clearLog()">Reset All History</button>
+  <div class="receipt-section">
+    <button class="btn toggle-btn" onclick="toggleReceipt()">Buka / Tutup Struk</button>
+    
+    <div id="receipt-body">
+      <div class="receipt">
+        <div class="receipt-header">
+          <strong style="font-size: 18px;">AUTOJUICE WORKSHOP</strong><br>
+          <span style="font-size: 10px;" id="r-date"></span>
+        </div>
+
+        <div id="receipt-items"></div>
+
+        <div class="divider"></div>
+
+        <div class="receipt-row">
+          <span>Total Compo Terpakai:</span>
+          <span id="final-compo">0</span>
+        </div>
+        <div class="receipt-row vault-row">
+          <span>Workshop Vault (Modal):</span>
+          <span id="final-vault">$0.00</span>
+        </div>
+        <div class="receipt-row jasa-row">
+          <span>Jasa Mekanik:</span>
+          <span id="final-jasa">$0.00</span>
+        </div>
+
+        <div class="receipt-row total-final">
+          <span>GRAND TOTAL</span>
+          <span id="final-bill">$0.00</span>
+        </div>
+
+        <div style="text-align: center; font-size: 9px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
+          HARAP SIMPAN STRUK UNTUK KLAIM GARANSI
+        </div>
+      </div>
+      <button onclick="clearAllData()" style="background:transparent; color:#8b949e; border:none; width:100%; margin-top:30px; cursor:pointer; font-size:10px;">[ RESET SEMUA DATA ]</button>
+    </div>
   </div>
 </div>
 
 <script>
-let currentSubTotal = 0;
-let grandTotal = 0;
+let state = { bill: 0, vault: 0, compo: 0 };
+let currentCalc = { bill: 0, compo: 0 };
 
-function gantiForm() {
-  let type = document.getElementById("type").value;
-  let form = document.getElementById("formArea");
-  form.innerHTML = "";
-  document.getElementById("hasil").innerText = "Total: $0.00";
-  currentSubTotal = 0;
+document.getElementById('r-date').innerText = new Date().toLocaleString('id-ID');
 
+function toggleReceipt() {
+  const b = document.getElementById('receipt-body');
+  b.style.display = (b.style.display === 'block') ? 'none' : 'block';
+}
+
+function resetInputs() {
+  const type = document.getElementById('service-type').value;
+  const container = document.getElementById('input-container');
+  container.innerHTML = "";
+  document.getElementById('hasil-display').innerText = "$0.00";
+  
   if (type === "repair") {
-    form.innerHTML = `<input type="number" placeholder="Body Repair Amount" class="repair"><input type="number" placeholder="Engine Repair Amount" class="repair">`;
+    container.innerHTML = `<input type="number" placeholder="Body Compo" class="in-val r-f"><input type="number" placeholder="Engine Compo" class="in-val r-f">`;
   } else if (type === "modif") {
-    tambahInput("modif", 2);
-    form.innerHTML += `<button class="add-btn" onclick="tambahInput('modif', 2)">+ Add Component</button>`;
+    addInputField("m-f");
+    container.innerHTML += `<button class="btn btn-add" onclick="addInputField('m-f')">+ Tambah Item</button>`;
   } else if (type === "brother") {
-    form.innerHTML = `<select id="brotherType" onchange="gantiBrother()"><option value="">Pilih Brother Type</option><option value="repair">Repair</option><option value="modif">Modif</option></select><div id="brotherArea"></div>`;
+    container.innerHTML = `<select id="b-sub" onchange="brotherSub()"><option value="">-- Tipe --</option><option value="r">Repair</option><option value="m">Modif</option></select><div id="b-area"></div>`;
   } else if (type === "ws_stored") {
-    tambahInput("ws-input", 1.5);
-    form.innerHTML += `<button class="add-btn" onclick="tambahInput('ws-input', 1.5)">+ Add Compo</button>`;
+    addInputField("w-f");
+    container.innerHTML += `<button class="btn btn-add" onclick="addInputField('w-f')">+ Tambah Item</button>`;
   }
 }
 
-function gantiBrother() {
-  let area = document.getElementById("brotherArea");
-  let type = document.getElementById("brotherType").value;
+function brotherSub() {
+  const type = document.getElementById('b-sub').value;
+  const area = document.getElementById('b-area');
   area.innerHTML = "";
-  if (type === "repair") {
-    area.innerHTML = `<input type="number" placeholder="Body Repair (B)" class="brother-repair"><input type="number" placeholder="Engine Repair (B)" class="brother-repair">`;
-  } else if (type === "modif") {
-    tambahInput("brother-modif", 1.8, "brotherArea");
-    area.innerHTML += `<button class="add-btn" onclick="tambahInput('brother-modif', 1.8, 'brotherArea')">+ Add Component</button>`;
+  if (type === "r") area.innerHTML = `<input type="number" placeholder="Body (B)" class="in-val b-f"><input type="number" placeholder="Engine (B)" class="in-val b-f">`;
+  else if (type === "m") {
+    addInputField("b-f", "b-area");
+    area.innerHTML += `<button class="btn btn-add" onclick="addInputField('b-f', 'b-area')">+ Tambah Item</button>`;
   }
 }
 
-function tambahInput(className, harga, target = "formArea") {
-  let form = document.getElementById(target);
-  let input = document.createElement("input");
-  input.type = "number";
-  input.placeholder = "Amount / Price";
-  input.className = className;
-  let btn = form.querySelector('button');
-  btn ? form.insertBefore(input, btn) : form.appendChild(input);
+function addInputField(cls, target = "input-container") {
+  const area = document.getElementById(target);
+  const input = document.createElement("input");
+  input.type = "number"; input.placeholder = "Jumlah Compo"; input.className = "in-val " + cls;
+  const btn = area.querySelector('button');
+  btn ? area.insertBefore(input, btn) : area.appendChild(input);
 }
 
-function hitung() {
-  let total = 0;
-  let type = document.getElementById("type").value;
-  if (type === "repair") {
-    document.querySelectorAll(".repair").forEach(i => total += (parseFloat(i.value) || 0) * 2.5);
-  } else if (type === "modif") {
-    document.querySelectorAll(".modif").forEach(i => total += (parseFloat(i.value) || 0) * 2);
-  } else if (type === "ws_stored") {
-    document.querySelectorAll(".ws-input").forEach(i => total += (parseFloat(i.value) || 0) * 1.5);
-  } else if (type === "brother") {
-    let bType = document.getElementById("brotherType").value;
-    let cls = bType === "repair" ? ".brother-repair" : ".brother-modif";
-    document.querySelectorAll(cls).forEach(i => total += (parseFloat(i.value) || 0) * 1.8);
-  }
-  currentSubTotal = total;
-  document.getElementById("hasil").innerText = "Total: $" + total.toLocaleString('en-US', {minimumFractionDigits: 2});
+function runCalculation() {
+  let bill = 0; let compo = 0;
+  document.querySelectorAll(".in-val").forEach(i => {
+    let v = parseFloat(i.value) || 0;
+    compo += v;
+    if (i.classList.contains('r-f')) bill += v * 2.5;
+    else if (i.classList.contains('m-f')) bill += v * 2;
+    else if (i.classList.contains('w-f')) bill += v * 1.5;
+    else if (i.classList.contains('b-f')) bill += v * 1.8;
+  });
+  currentCalc = { bill, compo };
+  document.getElementById('hasil-display').innerText = "$" + bill.toLocaleString();
 }
 
-function addToLog() {
-  if (currentSubTotal <= 0) return alert("Hitung dulu bos!");
-  let type = document.getElementById("type").value.replace('_', ' ').toUpperCase();
-  let logList = document.getElementById("logList");
-  let logId = Date.now();
-  let val = currentSubTotal;
+function logToReceipt() {
+  if (currentCalc.bill <= 0) return alert("Hitung dulu nilainya!");
+  
+  const type = document.getElementById('service-type').value.toUpperCase();
+  const list = document.getElementById('receipt-items');
+  const id = Date.now();
+  
+  const bill = currentCalc.bill;
+  const compo = currentCalc.compo;
+  const vault = compo * 1.5;
+  const jasa = bill - vault;
 
-  let div = document.createElement("div");
-  div.className = "log-item";
-  div.id = `item-${logId}`;
+  const div = document.createElement("div");
+  div.className = "item-block";
+  div.id = `item-${id}`;
   div.innerHTML = `
-    <div class="info">
-      <span class="cat">${type}</span>
-      <span class="val">$${val.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+    <div class="del-btn" onclick="removeLog(${id}, ${bill}, ${vault}, ${compo})">×</div>
+    <div class="item-main">
+      <span>${type}</span>
+      <span>$${bill.toFixed(2)}</span>
     </div>
-    <div class="del-item" onclick="removeItem(${logId}, ${val})">×</div>
+    <div class="item-detail">
+      • Compo Used: ${compo} units<br>
+      • Vault Share: $${vault.toFixed(2)} (1.5x)<br>
+      • Jasa Mekanik: $${jasa.toFixed(2)}
+    </div>
   `;
-  logList.appendChild(div);
-  grandTotal += val;
-  updateGrandTotalDisplay();
+  list.appendChild(div);
+
+  state.bill += bill; state.vault += vault; state.compo += compo;
+  updateUI();
+  document.getElementById('receipt-body').style.display = 'block';
 }
 
-function removeItem(id, amount) {
+function removeLog(id, b, v, c) {
   document.getElementById(`item-${id}`).remove();
-  grandTotal -= amount;
-  if (grandTotal < 0) grandTotal = 0;
-  updateGrandTotalDisplay();
+  state.bill -= b; state.vault -= v; state.compo -= c;
+  updateUI();
 }
 
-function updateGrandTotalDisplay() {
-  document.getElementById("grandTotal").innerText = "Grand Total: $" + grandTotal.toLocaleString('en-US', {minimumFractionDigits: 2});
+function updateUI() {
+  document.getElementById('final-bill').innerText = "$" + state.bill.toLocaleString('en-US', {minimumFractionDigits: 2});
+  document.getElementById('final-vault').innerText = "$" + state.vault.toLocaleString('en-US', {minimumFractionDigits: 2});
+  document.getElementById('final-compo').innerText = state.compo;
+  document.getElementById('final-jasa').innerText = "$" + (state.bill - state.vault).toLocaleString('en-US', {minimumFractionDigits: 2});
 }
 
-function clearLog() {
-  if(confirm("Hapus semua?")) {
-    grandTotal = 0;
-    document.getElementById("logList").innerHTML = "";
-    updateGrandTotalDisplay();
+function clearAllData() {
+  if(confirm("Hapus semua data struk?")) {
+    state = { bill: 0, vault: 0, compo: 0 };
+    document.getElementById('receipt-items').innerHTML = "";
+    updateUI();
   }
 }
 </script>
