@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AutoJuice Calculator Pro</title>
   <style>
+    /* Global Styles */
     * {
       box-sizing: border-box;
       transition: all 0.3s ease;
@@ -123,7 +124,7 @@
 <body>
 
 <div class="box">
-  <h2>AutoJuice <br><span style="color: #fff;">Component Calculator</span></h2>
+  <h2>AutoJuice <span style="color: #fff;">Calc</span></h2>
 
   <label>Main Category</label>
   <select id="type" onchange="gantiForm()">
@@ -168,8 +169,9 @@ function gantiForm() {
       <div id="brotherArea"></div>
     `;
   } else if (type === "ws_stored") {
-    // Fitur Baru: WS Stored
-    form.innerHTML = `<input type="number" placeholder="Masukkan Jumlah Compo" class="ws-input">`;
+    // Fitur WS Stored sekarang bisa tambah baris
+    tambahInput("ws-input", 1.5);
+    form.innerHTML += `<button class="add-btn" onclick="tambahInput('ws-input', 1.5)">+ Add Compo</button>`;
   }
 }
 
@@ -193,7 +195,7 @@ function tambahInput(className, harga, target = "formArea") {
   let form = document.getElementById(target);
   let input = document.createElement("input");
   input.type = "number";
-  input.placeholder = "Component Price";
+  input.placeholder = "Amount / Price";
   input.className = className;
   input.setAttribute("data-harga", harga);
 
@@ -218,9 +220,10 @@ function hitung() {
       total += (parseFloat(i.value) || 0) * 2;
     });
   } else if (type === "ws_stored") {
-    // Logika Perkalian 1.5
-    let val = document.querySelector(".ws-input").value;
-    total = (parseFloat(val) || 0) * 1.5;
+    // Menghitung semua baris input di WS Stored (x 1.5)
+    document.querySelectorAll(".ws-input").forEach(i => {
+      total += (parseFloat(i.value) || 0) * 1.5;
+    });
   } else if (type === "brother") {
     let bType = document.getElementById("brotherType").value;
     if (bType === "repair") {
