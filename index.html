@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoJuice Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at top left, #1a1a2e, #16213e);
+      color: #e0e0e0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .box {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 20px;
+      width: 400px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #00d2ff;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    label {
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #888;
+      margin-left: 5px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px 15px;
+      margin-top: 8px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #0f172a;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    select:focus, input:focus {
+      border-color: #00d2ff;
+      box-shadow: 0 0 8px rgba(0, 210, 255, 0.3);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .add-btn {
+      background: transparent;
+      border: 1px dashed #2962ff;
+      color: #2962ff;
+      margin-bottom: 15px;
+    }
+
+    .add-btn:hover {
+      background: rgba(41, 98, 255, 0.1);
+    }
+
+    .calc-btn {
+      background: linear-gradient(135deg, #00c853, #b2ff59);
+      color: #000;
+      margin-top: 10px;
+      box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+    }
+
+    .calc-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 200, 83, 0.4);
+    }
+
+    .calc-btn:active {
+      transform: translateY(0);
+    }
+
+    .result-container {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+      text-align: center;
+    }
+
+    .result {
+      font-size: 24px;
+      color: #00d2ff;
+      text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+    }
+
+    #formArea input, #brotherArea input {
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>AutoJuice <br><span style="color: #fff;">Component Calculator</span></h2>
+
+  <label>Main Category</label>
+  <select id="type" onchange="gantiForm()">
+    <option value="">Pilih Tipe</option>
+    <option value="repair">Repair</option>
+    <option value="modif">Modif</option>
+    <option value="brother">Brother</option>
+  </select>
+
+  <div id="formArea"></div>
+
+  <button class="calc-btn" onclick="hitung()">Calculate Total</button>
+
+  <div class="result-container">
+    <div class="result" id="hasil">Total: $0.00</div>
+  </div>
+</div>
+
+<script>
+function gantiForm() {
+  let type = document.getElementById("type").value;
+  let form = document.getElementById("formArea");
+  form.innerHTML = "";
+
+  if (type === "repair") {
+    form.innerHTML = `
+      <input type="number" placeholder="Body Repair Amount" class="repair">
+      <input type="number" placeholder="Engine Repair Amount" class="repair">
+    `;
+  } else if (type === "modif") {
+    tambahInput("modif", 2);
+    form.innerHTML += `<button class="add-btn" onclick="tambahInput('modif', 2)">+ Add Component</button>`;
+  } else if (type === "brother") {
+    form.innerHTML = `
+      <label>Sub Category</label>
+      <select id="brotherType" onchange="gantiBrother()">
+        <option value="">Pilih Brother Type</option>
+        <option value="repair">Repair</option>
+        <option value="modif">Modif</option>
+      </select>
+      <div id="brotherArea"></div>
+    `;
+  }
+}
+
+function gantiBrother() {
+  let type = document.getElementById("brotherType").value;
+  let area = document.getElementById("brotherArea");
+  area.innerHTML = "";
+
+  if (type === "repair") {
+    area.innerHTML = `
+      <input type="number" placeholder="Body Repair (Brother)" class="brother-repair">
+      <input type="number" placeholder="Engine Repair (Brother)" class="brother-repair">
+    `;
+  } else if (type === "modif") {
+    tambahInput("brother-modif", 1.8, "brotherArea");
+    area.innerHTML += `<button class="add-btn" onclick="tambahInput('brother-modif', 1.8, 'brotherArea')">+ Add Component</button>`;
+  }
+}
+
+function tambahInput(className, harga, target = "formArea") {
+  let form = document.getElementById(target);
+  let input = document.createElement("input");
+  input.type = "number";
+  input.placeholder = "Component Price";
+  input.className = className;
+  input.setAttribute("data-harga", harga);
+
+  let btn = form.querySelector('button');
+  if(btn) {
+    form.insertBefore(input, btn);
+  } else {
+    form.appendChild(input);
+  }
+}
+
+function hitung() {
+  let total = 0;
+  let type = document.getElementById("type").value;
+
+  if (type === "repair") {
+    document.querySelectorAll(".repair").forEach(i => {
+      total += (parseFloat(i.value) || 0) * 2.5;
+    });
+  } else if (type === "modif") {
+    document.querySelectorAll(".modif").forEach(i => {
+      total += (parseFloat(i.value) || 0) * 2;
+    });
+  } else if (type === "brother") {
+    let bType = document.getElementById("brotherType").value;
+    if (bType === "repair") {
+      document.querySelectorAll(".brother-repair").forEach(i => {
+        total += (parseFloat(i.value) || 0) * 1.8;
+      });
+    } else if (bType === "modif") {
+      document.querySelectorAll(".brother-modif").forEach(i => {
+        total += (parseFloat(i.value) || 0) * 1.8;
+      });
+    }
+  }
+
+  document.getElementById("hasil").innerText = "Total: $" + total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+</script>
+
+</body>
+</html>
