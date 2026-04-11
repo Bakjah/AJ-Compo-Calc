@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AutoJuice POS Ultra</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; transition: all 0.2s ease; }
     
@@ -14,20 +15,22 @@
       margin: 0;
       display: flex;
       justify-content: center;
-      align-items: center;
+      /* Memberikan jarak aman agar tidak nempel ke window atas/bawah */
+      padding: 50px 0; 
       min-height: 100vh;
-      padding: 20px;
+      overflow-x: hidden;
     }
 
-    .app-container {
+    .main-wrapper {
       display: flex;
-      gap: 30px;
-      flex-wrap: wrap;
+      gap: 40px;
+      align-items: flex-start;
       justify-content: center;
+      width: 95%;
       max-width: 1200px;
-      width: 100%;
     }
 
+    /* Calculator Card */
     .calc-card {
       background: #161b22;
       padding: 30px;
@@ -35,6 +38,7 @@
       width: 400px;
       border: 1px solid #30363d;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      flex-shrink: 0;
     }
 
     .calc-card h2 { text-align: center; color: #58a6ff; margin-bottom: 25px; letter-spacing: 1px; }
@@ -51,17 +55,20 @@
     }
     .btn-calc { background: #58a6ff; color: #ffffff; }
     .btn-log { background: #238636; color: #fff; }
-    .btn-add { background: transparent; border: 1px dashed #484f58; color: #8b949e; }
+    #hasil-display { font-size: 28px; font-weight: bold; text-align: center; color: #58a6ff; margin-top: 10px; }
 
-    #hasil-display {
-      font-size: 28px; font-weight: bold; text-align: center; color: #58a6ff; margin-top: 10px;
+    /* Receipt Section */
+    #receipt-container {
+      display: none;
+      gap: 15px;
+      align-items: flex-start;
     }
 
-    .receipt-section { width: 420px; }
     .receipt {
       background: #fff;
-      color: #1a1a1a;
-      padding: 25px;
+      color: #000;
+      padding: 40px 30px;
+      width: 400px !important;
       font-family: 'Courier New', monospace;
       box-shadow: 0 15px 35px rgba(0,0,0,0.4);
       position: relative;
@@ -74,121 +81,178 @@
     .receipt::before { top: -10px; background-image: linear-gradient(-135deg, #fff 5px, transparent 0), linear-gradient(135deg, #fff 5px, transparent 0); }
     .receipt::after { bottom: -10px; background-image: linear-gradient(-45deg, #fff 5px, transparent 0), linear-gradient(45deg, #fff 5px, transparent 0); }
 
-    .receipt-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
-    
-    .item-block { margin-bottom: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; position: relative; }
-    .item-main { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
-    .item-detail { font-size: 11px; color: #666; padding-left: 10px; margin-top: 3px; }
-    
-    .del-btn { 
-      color: #ff4d4d; cursor: pointer; font-weight: bold; font-size: 16px; 
-      position: absolute; right: -15px; top: -5px; padding: 5px;
-    }
-
-    .divider { border-top: 2px solid #000; margin: 10px 0; }
-
-    .receipt-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
-    .total-final { font-size: 20px; font-weight: 900; border-top: 1px solid #000; margin-top: 10px; padding-top: 5px; }
-    
+    .receipt-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; color: #000; }
+    .item-block { margin-bottom: 15px; border-bottom: 1px dashed #000; padding-bottom: 15px; position: relative; }
+    .item-main { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 14px; color: #000; }
+    .item-title-wrap { display: flex; align-items: center; gap: 12px; }
+    .del-btn { color: #f85149; cursor: pointer; font-size: 22px; line-height: 1; border: none; background: none; padding: 0; font-weight: bold; }
+    .item-detail { font-size: 12px; color: #000; padding-left: 30px; margin-top: 8px; line-height: 1.6; font-weight: 600; }
+    .divider { border-top: 2px solid #000; margin: 15px 0; }
+    .receipt-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; color: #000; }
     .jasa-row { color: #1a7f37; font-weight: bold; }
     .vault-row { color: #005cc5; font-style: italic; }
+    .total-final { font-size: 22px; font-weight: 900; border-top: 2px solid #000; margin-top: 15px; padding-top: 10px; color: #000; }
 
-    .toggle-btn { background: #30363d; color: #fff; width: 100%; margin-top: 15px; }
-    #receipt-body { display: none; }
+    .fs-side-btn { background: #30363d; color: #fff; border: 1px solid #484f58; border-radius: 8px; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 22px; }
+
+    /* OVERLAY FULLSCREEN - ANTI MENTOK */
+    #overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.98); 
+      display: none;
+      z-index: 9999999;
+      flex-direction: column;
+    }
+
+    .fs-nav {
+      position: fixed; top: 0; left: 0; width: 100%;
+      background: #161b22;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      border-bottom: 1px solid #30363d;
+      z-index: 10000002;
+    }
+
+    .fs-btn { padding: 12px 30px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; color: white; font-size: 14px; }
+    .btn-download { background: #238636; }
+    .btn-close-fs { background: #f85149; }
+
+    #fs-content { 
+      flex: 1;
+      overflow-y: auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 100px;
+    }
+
+    /* Paksa struk turun saat di dalam FS Content */
+    #fs-content .receipt {
+      margin-top: 150px !important; 
+    }
+
+    .floating-controls { position: fixed; bottom: 25px; right: 25px; display: flex; gap: 12px; z-index: 100; }
+    .btn-float { padding: 12px 25px; border-radius: 12px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
+    .btn-show { background: #1f6feb; color: white; }
+    .btn-reset { background: #161b22; color: #f85149; border: 1px solid #f85149; }
   </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="main-wrapper">
   <div class="calc-card">
     <h2>AUTOJUICE</h2>
-    <label>Pilih Layanan</label>
+    <label>Layanan</label>
     <select id="service-type" onchange="resetInputs()">
       <option value="">-- Pilih --</option>
       <option value="repair">Mechanical Repair (2.5x)</option>
       <option value="modif">Custom Modification (2.0x)</option>
       <option value="brother">Brotherhood Disc (1.8x)</option>
-      <option value="ws_stored">Wworkshop Vault (1.5x)</option>
+      <option value="ws_stored">WS Stored (1.5x)</option>
     </select>
-
     <div id="input-container"></div>
     <button class="btn btn-calc" onclick="runCalculation()">Hitung Harga</button>
     <button class="btn btn-log" onclick="logToReceipt()">Simpan ke Struk</button>
-    <div id="hasil-display">$0.00</div>
+    <div id="hasil-display">$0</div>
   </div>
 
-  <div class="receipt-section">
-    <button class="btn toggle-btn" onclick="toggleReceipt()">Buka / Tutup Struk</button>
-    
-    <div id="receipt-body">
-      <div class="receipt">
-        <div class="receipt-header">
-          <strong style="font-size: 18px;">AUTOJUICE WORKSHOP</strong><br>
-          <span style="font-size: 11px;" id="r-date"></span>
-        </div>
-
-        <div id="receipt-items"></div>
-
-        <div class="divider"></div>
-
-        <div class="receipt-row">
-          <span>Total Compo Terpakai:</span>
-          <span id="final-compo">0</span>
-        </div>
-        
-        <div class="receipt-row vault-row">
-          <span>Harga Suku Cadang:</span>
-          <span id="final-vault">$0.00</span>
-        </div>
-        
-        <div class="receipt-row jasa-row">
-          <span>Jasa Mekanik:</span>
-          <span id="final-jasa">$0.00</span>
-        </div>
-
-        <div class="receipt-row total-final">
-          <span>GRAND TOTAL</span>
-          <span id="final-bill">$0.00</span>
-        </div>
-
-        <div style="text-align: center; font-size: 9px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px;">
-          HARAP SIMPAN STRUK UNTUK KLAIM GARANSI
-        </div>
+  <div id="receipt-container">
+    <div id="receipt-wrap" class="receipt">
+      <div class="receipt-header">
+        <strong style="font-size: 18px;">AUTOJUICE WORKSHOP</strong><br>
+        <span style="font-size: 11px;" id="r-date"></span>
       </div>
-      <button onclick="clearAllData()" style="background:transparent; color:#8b949e; border:none; width:100%; margin-top:30px; cursor:pointer; font-size:10px;">[ RESET SEMUA DATA ]</button>
+      <div id="receipt-items"></div>
+      <div class="divider"></div>
+      <div class="receipt-row"><span>Total Compo:</span><span id="final-compo">0</span></div>
+      <div class="receipt-row vault-row"><span>Harga Suku Cadang:</span><span id="final-vault">$0.00</span></div>
+      <div class="receipt-row jasa-row"><span>Jasa Mekanik:</span><span id="final-jasa">$0.00</span></div>
+      <div class="receipt-row total-final"><span>GRAND TOTAL</span><span id="final-bill">$0.00</span></div>
     </div>
+    <button class="fs-side-btn" onclick="enterFullscreen()">⛶</button>
   </div>
+</div>
+
+<div class="floating-controls">
+  <button class="btn btn-float btn-reset" onclick="clearAllData()">Reset Data</button>
+  <button class="btn btn-float btn-show" onclick="toggleReceipt()">Show/Hide Struk</button>
+</div>
+
+<div id="overlay">
+  <div class="fs-nav">
+    <button class="fs-btn btn-download" id="dl-png">DOWNLOAD PNG</button>
+    <button class="fs-btn btn-close-fs" id="close-fs">TUTUP [ESC]</button>
+  </div>
+  <div id="fs-content"></div>
 </div>
 
 <script>
 let state = { bill: 0, vault: 0, compo: 0 };
 let currentCalc = { bill: 0, compo: 0 };
+document.getElementById('r-date').innerText = "Tgl: " + new Date().toLocaleDateString('id-ID');
 
-const d = new Date();
-const dateString = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear();
-document.getElementById('r-date').innerText = "Tanggal: " + dateString;
+document.getElementById('dl-png').addEventListener('click', (e) => { e.preventDefault(); downloadReceipt(); });
+document.getElementById('close-fs').addEventListener('click', (e) => { e.preventDefault(); exitFullscreen(); });
 
 function toggleReceipt() {
-  const b = document.getElementById('receipt-body');
-  b.style.display = (b.style.display === 'block') ? 'none' : 'block';
+  const container = document.getElementById('receipt-container');
+  container.style.display = (container.style.display === 'flex') ? 'none' : 'flex';
 }
+
+function enterFullscreen() {
+  const receipt = document.getElementById('receipt-wrap');
+  const overlay = document.getElementById('overlay');
+  const fsContent = document.getElementById('fs-content');
+  fsContent.innerHTML = ""; 
+  fsContent.appendChild(receipt);
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function exitFullscreen() {
+  const receipt = document.getElementById('receipt-wrap');
+  const overlay = document.getElementById('overlay');
+  const container = document.getElementById('receipt-container');
+  if (overlay.style.display === 'flex') {
+    container.insertBefore(receipt, container.firstChild);
+    overlay.style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+}
+
+function downloadReceipt() {
+  const receipt = document.getElementById('receipt-wrap');
+  const delBtns = receipt.querySelectorAll('.del-btn');
+  delBtns.forEach(b => b.style.visibility = 'hidden');
+  
+  html2canvas(receipt, { 
+    backgroundColor: "#ffffff", scale: 3, useCORS: true, scrollY: 0, 
+    windowHeight: receipt.scrollHeight, height: receipt.scrollHeight 
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `Struk-AutoJuice-${Date.now()}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    delBtns.forEach(b => b.style.visibility = 'visible');
+  });
+}
+
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') exitFullscreen(); });
 
 function resetInputs() {
   const type = document.getElementById('service-type').value;
   const container = document.getElementById('input-container');
   container.innerHTML = "";
-  document.getElementById('hasil-display').innerText = "$0.00";
-  
   if (type === "repair") {
     container.innerHTML = `<input type="number" placeholder="Body Compo" class="in-val r-f"><input type="number" placeholder="Engine Compo" class="in-val r-f">`;
-  } else if (type === "modif") {
-    addInputField("m-f");
-    container.innerHTML += `<button class="btn btn-add" onclick="addInputField('m-f')">+ Tambah Item</button>`;
+  } else if (type === "modif" || type === "ws_stored") {
+    addInputField(type === "modif" ? "m-f" : "w-f");
+    container.innerHTML += `<button class="btn btn-add" style="background:transparent; border:1px dashed #484f58; color:#8b949e; width:100%; cursor:pointer;" onclick="addInputField('${type === 'modif' ? 'm-f' : 'w-f'}')">+ Tambah Item</button>`;
   } else if (type === "brother") {
     container.innerHTML = `<select id="b-sub" onchange="brotherSub()"><option value="">-- Tipe --</option><option value="r">Repair</option><option value="m">Modif</option></select><div id="b-area"></div>`;
-  } else if (type === "ws_stored") {
-    addInputField("w-f");
-    container.innerHTML += `<button class="btn btn-add" onclick="addInputField('w-f')">+ Tambah Item</button>`;
   }
 }
 
@@ -197,10 +261,7 @@ function brotherSub() {
   const area = document.getElementById('b-area');
   area.innerHTML = "";
   if (type === "r") area.innerHTML = `<input type="number" placeholder="Body (B)" class="in-val b-f"><input type="number" placeholder="Engine (B)" class="in-val b-f">`;
-  else if (type === "m") {
-    addInputField("b-f", "b-area");
-    area.innerHTML += `<button class="btn btn-add" onclick="addInputField('b-f', 'b-area')">+ Tambah Item</button>`;
-  }
+  else if (type === "m") { addInputField("b-f", "b-area"); area.innerHTML += `<button class="btn btn-add" onclick="addInputField('b-f', 'b-area')">+ Item</button>`; }
 }
 
 function addInputField(cls, target = "input-container") {
@@ -212,7 +273,7 @@ function addInputField(cls, target = "input-container") {
 }
 
 function runCalculation() {
-  let bill = 0; let compo = 0;
+  let bill = 0, compo = 0;
   document.querySelectorAll(".in-val").forEach(i => {
     let v = parseFloat(i.value) || 0;
     compo += v;
@@ -226,37 +287,29 @@ function runCalculation() {
 }
 
 function logToReceipt() {
-  if (currentCalc.bill <= 0) return alert("Hitung dulu nilainya!");
-  
+  if (currentCalc.bill <= 0) return;
   const type = document.getElementById('service-type').value.toUpperCase().replace('_', ' ');
   const list = document.getElementById('receipt-items');
+  const bill = currentCalc.bill; const compo = currentCalc.compo;
+  const vault = compo * 1.5; const jasa = bill - vault;
   const id = Date.now();
-  
-  const bill = currentCalc.bill;
-  const compo = currentCalc.compo;
-  const vault = compo * 1.5;
-  const jasa = bill - vault;
-
   const div = document.createElement("div");
-  div.className = "item-block";
-  div.id = `item-${id}`;
+  div.className = "item-block"; div.id = `item-${id}`;
   div.innerHTML = `
-    <div class="del-btn" onclick="removeLog(${id}, ${bill}, ${vault}, ${compo})">×</div>
     <div class="item-main">
-      <span>${type}</span>
-      <span>$${bill.toFixed(2)}</span>
+      <div class="item-title-wrap"><span class="del-btn" onclick="removeLog(${id}, ${bill}, ${vault}, ${compo})">×</span><span>${type}</span></div>
+      <span style="white-space:nowrap; margin-left:15px;">$${bill.toFixed(2)}</span>
     </div>
     <div class="item-detail">
-      • Compo: ${compo} unit<br>
-      • Harga Suku Cadang: $${vault.toFixed(2)}<br>
-      • Jasa Mekanik: $${jasa.toFixed(2)}
+      <div>• Componen use : ${compo} Unit</div>
+      <div>• Harga Suku Cadang : $${vault.toFixed(2)}</div>
+      <div>• Jasa Mekanik : $${jasa.toFixed(2)}</div>
     </div>
   `;
   list.appendChild(div);
-
   state.bill += bill; state.vault += vault; state.compo += compo;
   updateUI();
-  document.getElementById('receipt-body').style.display = 'block';
+  if(document.getElementById('receipt-container').style.display !== 'flex') toggleReceipt();
 }
 
 function removeLog(id, b, v, c) {
@@ -273,7 +326,7 @@ function updateUI() {
 }
 
 function clearAllData() {
-  if(confirm("Hapus semua data struk?")) {
+  if(confirm("Reset semua isi struk?")) {
     state = { bill: 0, vault: 0, compo: 0 };
     document.getElementById('receipt-items').innerHTML = "";
     updateUI();
