@@ -28,7 +28,6 @@
       width: 100%;
     }
 
-    /* Calculator Card */
     .calc-card {
       background: #161b22;
       padding: 30px;
@@ -58,7 +57,6 @@
       font-size: 28px; font-weight: bold; text-align: center; color: #58a6ff; margin-top: 10px;
     }
 
-    /* Professional Receipt */
     .receipt-section { width: 420px; }
     .receipt {
       background: #fff;
@@ -110,7 +108,7 @@
       <option value="repair">Mechanical Repair (2.5x)</option>
       <option value="modif">Custom Modification (2.0x)</option>
       <option value="brother">Brotherhood Disc (1.8x)</option>
-      <option value="ws_stored">WS Stored (1.5x)</option>
+      <option value="ws_stored">Wworkshop Vault (1.5x)</option>
     </select>
 
     <div id="input-container"></div>
@@ -126,7 +124,7 @@
       <div class="receipt">
         <div class="receipt-header">
           <strong style="font-size: 18px;">AUTOJUICE WORKSHOP</strong><br>
-          <span style="font-size: 10px;" id="r-date"></span>
+          <span style="font-size: 11px;" id="r-date"></span>
         </div>
 
         <div id="receipt-items"></div>
@@ -137,10 +135,12 @@
           <span>Total Compo Terpakai:</span>
           <span id="final-compo">0</span>
         </div>
+        
         <div class="receipt-row vault-row">
-          <span>Workshop Vault :</span>
+          <span>Harga Suku Cadang:</span>
           <span id="final-vault">$0.00</span>
         </div>
+        
         <div class="receipt-row jasa-row">
           <span>Jasa Mekanik:</span>
           <span id="final-jasa">$0.00</span>
@@ -164,7 +164,9 @@
 let state = { bill: 0, vault: 0, compo: 0 };
 let currentCalc = { bill: 0, compo: 0 };
 
-document.getElementById('r-date').innerText = new Date().toLocaleString('id-ID');
+const d = new Date();
+const dateString = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear();
+document.getElementById('r-date').innerText = "Tanggal: " + dateString;
 
 function toggleReceipt() {
   const b = document.getElementById('receipt-body');
@@ -226,7 +228,7 @@ function runCalculation() {
 function logToReceipt() {
   if (currentCalc.bill <= 0) return alert("Hitung dulu nilainya!");
   
-  const type = document.getElementById('service-type').value.toUpperCase();
+  const type = document.getElementById('service-type').value.toUpperCase().replace('_', ' ');
   const list = document.getElementById('receipt-items');
   const id = Date.now();
   
@@ -245,8 +247,8 @@ function logToReceipt() {
       <span>$${bill.toFixed(2)}</span>
     </div>
     <div class="item-detail">
-      • Compo Used: ${compo} units<br>
-      • Vault Share: $${vault.toFixed(2)} <br>
+      • Compo: ${compo} unit<br>
+      • Harga Suku Cadang: $${vault.toFixed(2)}<br>
       • Jasa Mekanik: $${jasa.toFixed(2)}
     </div>
   `;
