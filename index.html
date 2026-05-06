@@ -91,49 +91,37 @@
     .vault-row { color: #005cc5; font-style: italic; }
     .total-final { font-size: 22px; font-weight: 900; border-top: 2px solid #000; margin-top: 15px; padding-top: 10px; color: #000; }
 
-    .fs-side-btn { background: #30363d; color: #fff; border: 1px solid #484f58; border-radius: 8px; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 22px; }
-
-    #overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.98); 
-      display: none;
-      z-index: 9999999;
-      flex-direction: column;
+    /* COMPLIMENT BOX STYLE */
+    .compliment-box {
+      margin-top: 20px;
+      padding: 12px;
+      border: 2px solid #000;
+      text-align: center;
+      font-weight: bold;
+      background: #f9f9f9;
     }
-
-    .fs-nav {
-      position: fixed; top: 0; left: 0; width: 100%;
-      background: #161b22;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      border-bottom: 1px solid #30363d;
-      z-index: 10000002;
-    }
-
-    .fs-btn { padding: 12px 30px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; color: white; font-size: 14px; }
-    .btn-download { background: #238636; }
-    .btn-close-fs { background: #f85149; }
-
-    #fs-content { 
-      flex: 1;
-      overflow-y: auto;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding-bottom: 100px;
-    }
-
-    #fs-content .receipt {
-      margin-top: 150px !important; 
-    }
+    .compliment-title { font-size: 11px; text-decoration: underline; margin-bottom: 5px; color: #333; }
+    .compliment-value { font-size: 15px; text-transform: uppercase; color: #000; line-height: 1.2; }
 
     .floating-controls { position: fixed; bottom: 25px; right: 25px; display: flex; gap: 12px; z-index: 100; }
     .btn-float { padding: 12px 25px; border-radius: 12px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
     .btn-show { background: #1f6feb; color: white; }
     .btn-reset { background: #161b22; color: #f85149; border: 1px solid #f85149; }
+    
+    #overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.98); display: none; z-index: 9999999; flex-direction: column;
+    }
+    .fs-nav {
+      position: fixed; top: 0; left: 0; width: 100%; background: #161b22;
+      padding: 20px; display: flex; justify-content: center; gap: 20px; border-bottom: 1px solid #30363d; z-index: 10000002;
+    }
+    .fs-btn { padding: 12px 30px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; color: white; font-size: 14px; }
+    .btn-download { background: #238636; }
+    .btn-close-fs { background: #f85149; }
+    #fs-content { flex: 1; overflow-y: auto; width: 100%; display: flex; flex-direction: column; align-items: center; padding-bottom: 100px; }
+    #fs-content .receipt { margin-top: 150px !important; }
+    .fs-side-btn { background: #30363d; color: #fff; border: 1px solid #484f58; border-radius: 8px; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 22px; }
   </style>
 </head>
 <body>
@@ -163,10 +151,16 @@
       </div>
       <div id="receipt-items"></div>
       <div class="divider"></div>
-      <div class="receipt-row"><span>Total Compo:</span><span id="final-compo">0</span></div>
+      <div class="receipt-row"><span>Total Akumulasi Compo:</span><span id="final-compo">0</span></div>
       <div class="receipt-row vault-row"><span>Harga Suku Cadang:</span><span id="final-vault">$0.00</span></div>
       <div class="receipt-row jasa-row"><span>Jasa Mekanik:</span><span id="final-jasa">$0.00</span></div>
       <div class="receipt-row total-final"><span>GRAND TOTAL</span><span id="final-bill">$0.00</span></div>
+      
+      <!-- BOX COMPLIMENT -->
+      <div id="compliment-section" class="compliment-box" style="display:none;">
+        <div class="compliment-title">FREE COMPLIMENT</div>
+        <div id="compliment-text" class="compliment-value">-</div>
+      </div>
     </div>
     <button class="fs-side-btn" onclick="enterFullscreen()">⛶</button>
   </div>
@@ -187,16 +181,25 @@
 
 <script>
 // ==========================================
-// KONFIGURASI HARGA (EDIT DI SINI)
+// CONFIG (Bisa diubah-ubah sesuka hati)
 // ==========================================
-const PRICING_CONFIG = {
+const CONFIG = {
   multipliers: {
     repair: 3.0,
     modif: 3.0,
     brother: 2.3,
     ws_stored: 2.0
   },
-  sparepartPricePerUnit: 2.0 // Harga suku cadang per 1 compo
+  sparepartPricePerUnit: 2.0,
+
+  // Logic: Sistem akan mengecek dari angka TERBESAR.
+  // Jika Total Compo di struk melebihi threshold, hadiah tersebut diambil.
+  complimentRules: [
+    { threshold: 5000, gift: "Makanan Mewah" },
+    { threshold: 1000, gift: "Snack + Air Minum" },
+    { threshold: 150,  gift: "Snack" },
+    { threshold: 0,    gift: "Air Minum" } 
+  ]
 };
 
 let state = { bill: 0, vault: 0, compo: 0 };
@@ -287,11 +290,11 @@ function addInputField(cls, target = "input-container") {
 
 function runCalculation() {
   let bill = 0, compo = 0;
-  const mult = PRICING_CONFIG.multipliers;
+  const mult = CONFIG.multipliers;
 
   document.querySelectorAll(".in-val").forEach(i => {
     let v = parseFloat(i.value) || 0;
-    if (v < 0) v = 0; // Proteksi angka negatif
+    if (v < 0) v = 0;
     compo += v;
 
     if (i.classList.contains('r-f')) bill += v * mult.repair;
@@ -307,12 +310,15 @@ function runCalculation() {
 function logToReceipt() {
   if (currentCalc.bill <= 0) return;
   
-  const type = document.getElementById('service-type').value.toUpperCase().replace('_', ' ');
-  const list = document.getElementById('receipt-items');
+  const typeValue = document.getElementById('service-type').value;
+  let typeLabel = typeValue.toUpperCase().replace('_', ' ');
   
+  if (typeValue === 'repair') typeLabel = "MECHANICAL REPAIR (B&E)";
+
+  const list = document.getElementById('receipt-items');
   const bill = currentCalc.bill; 
   const compo = currentCalc.compo;
-  const vault = compo * PRICING_CONFIG.sparepartPricePerUnit; 
+  const vault = compo * CONFIG.sparepartPricePerUnit; 
   const jasa = bill - vault;
   
   const id = Date.now();
@@ -320,12 +326,11 @@ function logToReceipt() {
   div.className = "item-block"; div.id = `item-${id}`;
   div.innerHTML = `
     <div class="item-main">
-      <div class="item-title-wrap"><span class="del-btn" onclick="removeLog(${id}, ${bill}, ${vault}, ${compo})">×</span><span>${type}</span></div>
+      <div class="item-title-wrap"><span class="del-btn" onclick="removeLog(${id}, ${bill}, ${vault}, ${compo})">×</span><span>${typeLabel}</span></div>
       <span style="white-space:nowrap; margin-left:15px;">$${bill.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
     </div>
     <div class="item-detail">
-      <div>• Componen use : ${compo} Unit</div>
-      <div>• Harga Suku Cadang : $${vault.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+      <div>• Componen : ${compo} Unit</div>
       <div>• Jasa Mekanik : $${jasa.toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
     </div>
   `;
@@ -354,6 +359,18 @@ function updateUI() {
   document.getElementById('final-vault').innerText = "$" + state.vault.toLocaleString('en-US', {minimumFractionDigits: 2});
   document.getElementById('final-compo').innerText = state.compo;
   document.getElementById('final-jasa').innerText = "$" + finalJasa.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+  const totalAkumulasi = state.compo;
+  const compBox = document.getElementById('compliment-section');
+  const compText = document.getElementById('compliment-text');
+
+  if (totalAkumulasi > 0) {
+    compBox.style.display = 'block';
+    const rule = CONFIG.complimentRules.find(r => totalAkumulasi > r.threshold);
+    compText.innerText = rule ? rule.gift : CONFIG.complimentRules[CONFIG.complimentRules.length - 1].gift;
+  } else {
+    compBox.style.display = 'none';
+  }
 }
 
 function clearAllData() {
