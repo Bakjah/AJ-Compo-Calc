@@ -101,7 +101,7 @@
       background: #f9f9f9;
     }
     .compliment-title { font-size: 11px; text-decoration: underline; margin-bottom: 5px; color: #333; }
-    .compliment-value { font-size: 15px; text-transform: uppercase; color: #000; line-height: 1.2; }
+    .compliment-value { font-size: 15px; text-transform: uppercase; color: #000; }
 
     .floating-controls { position: fixed; bottom: 25px; right: 25px; display: flex; gap: 12px; z-index: 100; }
     .btn-float { padding: 12px 25px; border-radius: 12px; font-size: 13px; cursor: pointer; border: none; font-weight: bold; }
@@ -156,7 +156,6 @@
       <div class="receipt-row jasa-row"><span>Jasa Mekanik:</span><span id="final-jasa">$0.00</span></div>
       <div class="receipt-row total-final"><span>GRAND TOTAL</span><span id="final-bill">$0.00</span></div>
       
-      <!-- BOX COMPLIMENT -->
       <div id="compliment-section" class="compliment-box" style="display:none;">
         <div class="compliment-title">FREE COMPLIMENT</div>
         <div id="compliment-text" class="compliment-value">-</div>
@@ -180,29 +179,22 @@
 </div>
 
 <script>
-// ==========================================
-// CONFIG (Bisa diubah-ubah sesuka hati)
-// ==========================================
 const CONFIG = {
-  multipliers: {
-    repair: 3.0,
-    modif: 3.0,
-    brother: 2.3,
-    ws_stored: 2.0
-  },
+  multipliers: { 
+    repair: 3.0, 
+    modif: 3.0, 
+    brother: 2.3, 
+    ws_stored: 2.0 },
   sparepartPricePerUnit: 2.0,
-
-  // Logic: Sistem akan mengecek dari angka TERBESAR.
-  // Jika Total Compo di struk melebihi threshold, hadiah tersebut diambil.
   complimentRules: [
-    { threshold: 5000, gift: "Makanan Mewah" },
+    { threshold: 5000, gift: "Makanan dari Restoran" },
     { threshold: 1000, gift: "Snack + Air Minum" },
     { threshold: 150,  gift: "Snack" },
     { threshold: 0,    gift: "Air Minum" } 
   ]
 };
 
-let state = { bill: 0, vault: 0, compo: 0 };
+let state = { bill: 0, vault: 0, compo: 0, hasWS: false };
 let currentCalc = { bill: 0, compo: 0 };
 
 document.getElementById('r-date').innerText = "Tgl: " + new Date().toLocaleDateString('id-ID');
@@ -220,8 +212,7 @@ function enterFullscreen() {
   const receipt = document.getElementById('receipt-wrap');
   const overlay = document.getElementById('overlay');
   const fsContent = document.getElementById('fs-content');
-  fsContent.innerHTML = ""; 
-  fsContent.appendChild(receipt);
+  fsContent.innerHTML = ""; fsContent.appendChild(receipt);
   overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
@@ -241,11 +232,7 @@ function downloadReceipt() {
   const receipt = document.getElementById('receipt-wrap');
   const delBtns = receipt.querySelectorAll('.del-btn');
   delBtns.forEach(b => b.style.visibility = 'hidden');
-  
-  html2canvas(receipt, { 
-    backgroundColor: "#ffffff", scale: 3, useCORS: true, scrollY: 0, 
-    windowHeight: receipt.scrollHeight, height: receipt.scrollHeight 
-  }).then(canvas => {
+  html2canvas(receipt, { backgroundColor: "#ffffff", scale: 3, useCORS: true, scrollY: 0, height: receipt.scrollHeight }).then(canvas => {
     const link = document.createElement('a');
     link.download = `Struk-AutoJuice-${Date.now()}.png`;
     link.href = canvas.toDataURL("image/png");
@@ -291,28 +278,23 @@ function addInputField(cls, target = "input-container") {
 function runCalculation() {
   let bill = 0, compo = 0;
   const mult = CONFIG.multipliers;
-
   document.querySelectorAll(".in-val").forEach(i => {
     let v = parseFloat(i.value) || 0;
     if (v < 0) v = 0;
     compo += v;
-
     if (i.classList.contains('r-f')) bill += v * mult.repair;
     else if (i.classList.contains('m-f')) bill += v * mult.modif;
     else if (i.classList.contains('w-f')) bill += v * mult.ws_stored;
     else if (i.classList.contains('b-f')) bill += v * mult.brother;
   });
-
   currentCalc = { bill, compo };
   document.getElementById('hasil-display').innerText = "$" + bill.toLocaleString('en-US', {minimumFractionDigits: 2});
 }
 
 function logToReceipt() {
   if (currentCalc.bill <= 0) return;
-  
   const typeValue = document.getElementById('service-type').value;
   let typeLabel = typeValue.toUpperCase().replace('_', ' ');
-  
   if (typeValue === 'repair') typeLabel = "MECHANICAL REPAIR (B&E)";
 
   const list = document.getElementById('receipt-items');
@@ -324,6 +306,7 @@ function logToReceipt() {
   const id = Date.now();
   const div = document.createElement("div");
   div.className = "item-block"; div.id = `item-${id}`;
+  div.dataset.type = typeValue;
   div.innerHTML = `
     <div class="item-main">
       <div class="item-title-wrap"><span class="del-btn" onclick="removeLog(${id}, ${bill}, ${vault}, ${compo})">×</span><span>${typeLabel}</span></div>
@@ -336,10 +319,7 @@ function logToReceipt() {
   `;
   list.appendChild(div);
   
-  state.bill += bill; 
-  state.vault += vault; 
-  state.compo += compo;
-  
+  state.bill += bill; state.vault += vault; state.compo += compo;
   updateUI();
   if(document.getElementById('receipt-container').style.display !== 'flex') toggleReceipt();
 }
@@ -360,13 +340,16 @@ function updateUI() {
   document.getElementById('final-compo').innerText = state.compo;
   document.getElementById('final-jasa').innerText = "$" + finalJasa.toLocaleString('en-US', {minimumFractionDigits: 2});
 
-  const totalAkumulasi = state.compo;
+  const items = document.querySelectorAll('.item-block');
+  let hasWS = false;
+  items.forEach(item => { if(item.dataset.type === 'ws_stored') hasWS = true; });
+
   const compBox = document.getElementById('compliment-section');
   const compText = document.getElementById('compliment-text');
 
-  if (totalAkumulasi > 0) {
+  if (state.compo > 0 && !hasWS) {
     compBox.style.display = 'block';
-    const rule = CONFIG.complimentRules.find(r => totalAkumulasi > r.threshold);
+    const rule = CONFIG.complimentRules.find(r => state.compo > r.threshold);
     compText.innerText = rule ? rule.gift : CONFIG.complimentRules[CONFIG.complimentRules.length - 1].gift;
   } else {
     compBox.style.display = 'none';
